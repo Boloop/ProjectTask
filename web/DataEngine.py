@@ -46,7 +46,7 @@ class DB():
 		self.engine = None
 		self.Session = None
 	def Ignition(self):
-		engine = create_engine('sqlite:///:memory:', echo=True)	
+		engine = create_engine('sqlite:///tempdb.sql', echo=True)	
 		Base.metadata.create_all(engine)  # Create all tables...
 		self.Session = sessionmaker(bind=engine)
 	def GetSession(self):

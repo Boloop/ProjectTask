@@ -1,6 +1,7 @@
 from flask import Flask
 from flask import request
 from sqlalchemy import create_engine
+from datetime import datetime
 
 from DataEngine import *
 
@@ -70,5 +71,54 @@ def adminAddUser():
 		</form>
 		"""
 
+@app.route('/tasks/addtask', methods=['GET', 'POST'])
+def userAddTask():
+	ses = db.GetSession()
+	if request.method == 'POST':
+		submitdata = request.form
+		taskNameToAdd = request.form.get('taskname', '')
+		userAddedBy = request.form.get('username', '')
+		if userAddedBy == "":
+			ses.close()
+			return "Could not add blank user"
+		if taskNameToAdd == "":
+			ses.close()
+			return "Could not add blank task"
+
+		#Search the DB for a duplicate?
+		dbUser = ses.query(User).filter_by(name=userAddedBy).first()
+		if dbUser == None :
+			ses.close()
+			return "User "+userAddedBy+" does not exist";
+
+		#Otherwise add task by this user!
+		taskObjToAdd = Task()
+		taskObjToAdd.createdBy = dbUser.id
+		taskObjToAdd.dateAddedUTC= datetime.utcnow()
+		taskObjToAdd.priority = 50
+		taskObjToAdd.shortName = taskNameToAdd
+		ses.add(taskObjToAdd)
+		ses.commit()
+		ses.close()
+
+		return "Task Added!"
+	else:
+		result = """
+		<form name="input" action="/tasks/addtask" method="post">
+		task name: <input type="text" name="taskname"></br>
+		"""
+		users = ses.query(User)
+		result += '<select name="username">'
+		for user in users:
+			result += '<option value="'+user.name+'">'+user.name+'</option>'
+		result += "</select></br>"
+		result += """
+		<input type="submit" value="Add Task">
+		</form>
+		"""
+		ses.close()
+		return result
+
 if __name__ == "__main__":
-    app.run()
+	app.debug = True
+	app.run()
