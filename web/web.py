@@ -44,21 +44,21 @@ def adminIndex():
 def adminAddUser():
 	if request.method == 'POST':
 		ses = db.GetSession()
+		um = UserMan(ses)
 		submitdata = request.form
 		userToAdd = request.form.get('user', '')
-		if userToAdd == "":
+		if not um.isUsernameValid(userToAdd):
 			ses.close()
-			return "Could not add blank user"
+			return "Invalid Username"
 
 		#Search the DB for a duplicate?
-		dbUser = ses.query(User).filter_by(name=userToAdd).first()
+		dbUser = um.getUserByName(userToAdd)
 		if dbUser != None:
 			ses.close()
 			return "User "+userToAdd+" already exists";
 		#Otherwise add the user!
-		userObjToAdd = User()
-		userObjToAdd.name = userToAdd
-		ses.add(userObjToAdd)
+		
+		um.addNewUser(userToAdd)
 		ses.commit()
 		ses.close()
 
@@ -74,6 +74,7 @@ def adminAddUser():
 @app.route('/tasks/addtask', methods=['GET', 'POST'])
 def userAddTask():
 	ses = db.GetSession()
+	um = UserMan(ses)
 	if request.method == 'POST':
 		submitdata = request.form
 		taskNameToAdd = request.form.get('taskname', '')
@@ -107,10 +108,9 @@ def userAddTask():
 		<form name="input" action="/tasks/addtask" method="post">
 		task name: <input type="text" name="taskname"></br>
 		"""
-		users = ses.query(User)
 		result += '<select name="username">'
-		for user in users:
-			result += '<option value="'+user.name+'">'+user.name+'</option>'
+		for user in um.getAllUserNames():
+			result += '<option value="'+user+'">'+user+'</option>'
 		result += "</select></br>"
 		result += """
 		<input type="submit" value="Add Task">

@@ -3,6 +3,7 @@ from sqlalchemy import create_engine
 from sqlalchemy import Column, Integer, String, DateTime, Boolean
 from sqlalchemy import ForeignKey
 from sqlalchemy.orm import sessionmaker
+import re
 
 #Base Class Generated
 Base = declarative_base()
@@ -51,6 +52,38 @@ class DB():
 		self.Session = sessionmaker(bind=engine)
 	def GetSession(self):
 		return self.Session()
+
+
+class UserMan(object):
+	def __init__(self, ses):
+		self.ses = ses
+	def isUsernameValid(self, name):
+		"""
+		Return if the username is valid to be put into the
+		database
+		"""
+		if 0 == len(name):
+			return False
+
+		return None != re.match("^[A-Za-z0-9_-]*$", name)
+
+	def getUserByName(self, name):
+		return self.ses.query(User).filter_by(name=name).first()
+
+	def addNewUser(self, name):
+		u = User()	
+		u.name = name
+		self.ses.add(u);
+		return u
+	def getAllUserNames(self):
+		"""
+		Return a list of all usernames in the DB
+		"""
+		result = []
+		for n in self.ses.query(User).all():
+			result.append(n.name)
+		return result
+
 
 if __name__ == "__main__":
 	print User.__table__
